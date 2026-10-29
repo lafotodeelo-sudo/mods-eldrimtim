@@ -1,0 +1,6 @@
+{
+  "name": "produccion-ia",
+  "version": "0.1.0",
+  "description": "Panel de producción IA: anota cada generación de Higgsfield y Magnific por plano, mide el gasto real contra el techo del presupuesto y arma la bitácora del método.",
+  "types": "./types/index.d.ts"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "mods-eldrimtim",
+  "owner": { "name": "El Drim Tim" },
+  "plugins": [
+    { "name": "destilador", "source": "./destilador" },
+    { "name": "produccion-ia", "source": "./produccion-ia" }
+  ]
+}
