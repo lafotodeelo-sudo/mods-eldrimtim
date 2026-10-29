@@ -2,6 +2,10 @@
 
 Panel al lado del chat para las producciones con IA de El Drim Tim. Anota cada generación de Higgsfield y Magnific con hora, plano, modelo, resolución, duración y tomas. El costo se mide con el saldo real de Higgsfield antes y después de cada generación, así que incluye lo que la plataforma cobre de verdad. Las cotizaciones (`get_cost`) se ven aparte y no suman al gasto.
 
+## Arranque automático
+
+No hace falta ningún comando. Cuando Claude reconoce que empieza o se retoma una producción con IA, abre el panel por su cuenta con el nombre del proyecto y el techo, y marca cada plano antes de generar. Los comandos de abajo quedan para corregir algo a mano.
+
 ## Comandos
 
 - `/proyecto <nombre>`: empieza un proyecto y el gasto se cuenta desde ahí.

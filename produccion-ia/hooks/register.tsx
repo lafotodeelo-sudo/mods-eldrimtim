@@ -135,6 +135,37 @@ const vigilarTecho = async ($: EngineInterface, antes: number) => {
   }
 }
 
+// Empieza un proyecto, o lo retoma si es el mismo: así no se borra lo anotado.
+const iniciar = async ($: EngineInterface, proyecto: string, techo?: number) => {
+  const actual = await read($, meta)
+  const retoma = actual.proyecto === proyecto
+  if (!retoma) {
+    const ahora = await consultarSaldo($)
+    await update($, entradas, () => [])
+    await update($, saldo, () => ({ inicio: ahora, actual: ahora }))
+    await update($, meta, () => ({ proyecto, plano: '—', techo: null }))
+  }
+  if (techo && techo > 0) {
+    await update($, meta, m => ({ ...m, techo }))
+  }
+  await guardar($)
+  void $.ui.open({ id: PANEL, title: TITULO })
+
+  return retoma
+}
+
+const AVISO_MODELO = {
+  id: 'produccion-ia:arranque',
+  scope: 'session',
+  text: [
+    'Panel de producción IA (mod de Eloy). Cuando reconozcas que Eloy arranca o retoma una producción con IA',
+    '(un spot, corto o pieza con Higgsfield o Seedance, o cuando cargás el Método IA o publicidad-el-drim-tim),',
+    'llamá la herramienta iniciar_produccion con el nombre del proyecto y, si ya hay presupuesto, el techo en créditos.',
+    'Cada vez que pasés a trabajar otro plano, llamá marcar_plano antes de generar.',
+    'No lo pidás ni lo expliqués: hacelo y mencionalo en una línea como mucho.',
+  ].join(' '),
+} as const
+
 const COMANDOS = [
   { name: 'produccion', description: 'Abre el panel de producción IA' },
   { name: 'proyecto', description: 'Empieza un proyecto nuevo en el panel', argumentHint: '<nombre>' },
@@ -164,10 +195,63 @@ export const register: Register = on => {
       await update($, meta, () => guardadaMeta)
     }
 
+    await $.tool.register({
+      name: 'iniciar_produccion',
+      description:
+        'Abre el panel de producción IA para un proyecto: empieza a contar el gasto real de Higgsfield desde ahora, o retoma el proyecto si ya es el actual. Llamala apenas reconozcas que arranca o se retoma una producción con IA.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          proyecto: { type: 'string', description: 'Nombre corto del proyecto' },
+          techo: { type: 'number', description: 'Techo del presupuesto en créditos, si ya se conoce' },
+        },
+        required: ['proyecto'],
+      },
+      isDeferred: false,
+    })
+    await $.tool.register({
+      name: 'marcar_plano',
+      description: 'Marca en el panel de producción IA el plano en que se trabaja; las generaciones siguientes se anotan ahí.',
+      inputSchema: {
+        type: 'object',
+        properties: { plano: { type: 'string', description: 'El plano, por ejemplo P3' } },
+        required: ['plano'],
+      },
+      isDeferred: false,
+    })
+
     await refrescarSaldo($)
-    void $.ui.open({ id: PANEL, title: TITULO })
+    if ((await read($, meta)).proyecto !== 'Sin proyecto') {
+      void $.ui.open({ id: PANEL, title: TITULO })
+    }
 
     return next(e)
+  })
+
+  on('prompt.compose', async ($, e, next) => {
+    const r = await next(e)
+
+    return { sections: [...r.sections, AVISO_MODELO] }
+  })
+
+  on('tool.call', { tool: 'mcp__produccion-ia__iniciar_produccion' }, async ($, e) => {
+    const a = e as unknown as { proyecto?: unknown; techo?: unknown }
+    const proyecto = String(a.proyecto ?? '').trim() || 'Producción sin nombre'
+    const techo = Number(a.techo) || undefined
+    const retoma = await iniciar($, proyecto, techo)
+    const m = await read($, meta)
+
+    return {
+      result: `${retoma ? 'Proyecto retomado' : 'Proyecto empezado'}: ${proyecto}. Gasto desde el inicio: ${gastoTotal(await read($, saldo))} créditos. Techo: ${m.techo ?? 'sin fijar'}.`,
+    }
+  })
+
+  on('tool.call', { tool: 'mcp__produccion-ia__marcar_plano' }, async ($, e) => {
+    const plano = String((e as unknown as { plano?: unknown }).plano ?? '').trim() || '—'
+    await update($, meta, m => ({ ...m, plano }))
+    await guardar($)
+
+    return { result: `Plano ${plano} marcado.` }
   })
 
   on('tool.call', async ($, e, next) => {
@@ -210,6 +294,7 @@ export const register: Register = on => {
     }
 
     await update($, entradas, lista => [...lista, entrada].slice(-300))
+    void $.ui.open({ id: PANEL, title: TITULO })
     await vigilarTecho($, antes)
     await guardar($)
 
@@ -228,14 +313,13 @@ export const register: Register = on => {
     if (!proyecto) {
       return { text: `Proyecto actual: ${(await read($, meta)).proyecto}. Uso: /proyecto <nombre>` }
     }
-    const ahora = await consultarSaldo($)
-    await update($, entradas, () => [])
-    await update($, saldo, () => ({ inicio: ahora, actual: ahora }))
-    await update($, meta, () => ({ proyecto, plano: '—', techo: null }))
-    await guardar($)
-    await $.ui.open({ id: PANEL, title: TITULO })
+    const retoma = await iniciar($, proyecto)
 
-    return { text: `Proyecto "${proyecto}" empezado. El gasto se cuenta desde ahora. Fijá el techo con /techo.` }
+    return {
+      text: retoma
+        ? `Proyecto "${proyecto}" retomado.`
+        : `Proyecto "${proyecto}" empezado. El gasto se cuenta desde ahora. Fijá el techo con /techo.`,
+    }
   })
 
   on('command.run', { command: 'plano' }, async ($, e) => {
