@@ -17,4 +17,4 @@ Mod de Claude Code para El Drim Tim. Cuando Eloy manda un mensaje largo, dictado
 - `/destilador off` y `/destilador on`: apagarlo y encenderlo.
 - `/destilador umbral 120`: cambia desde cuántas palabras actúa.
 
-Las instrucciones del destilado están en `hooks/instrucciones.ts`. Ahí se afina cómo reconstruye.
+Las instrucciones del destilado están en `hooks/instrucciones.ts`. Ahí se afina cómo reconstruye. Antes de dar por bueno un cambio, se prueba con `PRUEBA.md`.
