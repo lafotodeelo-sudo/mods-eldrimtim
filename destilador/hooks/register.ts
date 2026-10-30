@@ -21,9 +21,12 @@ const leerAjustes = async ($: EngineInterface): Promise<Ajustes> => {
 const contarPalabras = (texto: string) =>
   texto.trim().split(/\s+/).filter(Boolean).length
 
-// Código o markdown ya armado: eso no es un dictado.
+// Código, markdown o texto pegado con viñetas y párrafos: eso no es un dictado.
 const yaEstructurado = (texto: string) =>
-  texto.includes('```') || /^#{1,3} /m.test(texto)
+  texto.includes('```') ||
+  /^#{1,3} /m.test(texto) ||
+  /^\s*([*\-•]|\d+[.)])\s/m.test(texto) ||
+  (texto.match(/\n\s*\n/g) ?? []).length >= 3
 
 const destilar = async ($: EngineInterface, texto: string) => {
   $.ui.status('Destilando tu mensaje…')

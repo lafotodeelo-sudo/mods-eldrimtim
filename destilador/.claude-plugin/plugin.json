@@ -1,5 +1,5 @@
 {
   "name": "destilador",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Convierte dictados largos, con muletillas y vueltas, en prompts claros y completos antes de que lleguen a Claude."
 }
