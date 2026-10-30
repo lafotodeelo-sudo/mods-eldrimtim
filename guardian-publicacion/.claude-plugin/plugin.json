@@ -1,0 +1,6 @@
+{
+  "name": "guardian-publicacion",
+  "version": "0.1.0",
+  "description": "Franja sobre el chat que avisa cuando hay cambios sin publicar en la web o en los mods, con un botón para publicarlos con aprobación.",
+  "types": "./types/index.d.ts"
+}
